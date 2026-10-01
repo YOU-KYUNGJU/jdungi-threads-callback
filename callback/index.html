@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>주둥이 Threads 연결</title>
+<style>
+  :root { --bg:#fafaf9; --fg:#1c1917; --muted:#57534e; --card:#fff; --line:#e7e5e4; --accent:#ea580c; --ok:#15803d; --bad:#b91c1c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1c1917; --fg:#fafaf9; --muted:#a8a29e; --card:#292524; --line:#44403c; --accent:#fb923c; --ok:#4ade80; --bad:#f87171; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui,-apple-system,"Malgun Gothic",sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:40px 16px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 24px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .status { font-weight:600; margin:0 0 12px; }
+  .ok { color:var(--ok); } .bad { color:var(--bad); }
+  textarea { width:100%; min-height:110px; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); font:13px/1.5 ui-monospace,Consolas,monospace; resize:vertical; word-break:break-all; }
+  button { margin-top:12px; width:100%; padding:12px; border:0; border-radius:8px; background:var(--accent); color:#fff; font-size:16px; font-weight:600; cursor:pointer; }
+  ol { padding-left:20px; color:var(--muted); font-size:14px; }
+  .note { font-size:13px; color:var(--muted); margin-top:16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>주둥이 · Threads 연결</h1>
+  <p class="sub">(주)주둥이 사내 시스템용 인증 수신 페이지</p>
+  <div class="card">
+    <p id="status" class="status">확인 중…</p>
+    <div id="codeBox" hidden>
+      <textarea id="code" readonly aria-label="인증 코드"></textarea>
+      <button id="copy" type="button">인증 코드 복사</button>
+      <ol>
+        <li>위 버튼으로 코드를 복사합니다.</li>
+        <li>회사 시스템의 Threads 연결 화면에 붙여넣습니다.</li>
+        <li>코드는 약 1시간 안에, 한 번만 쓸 수 있습니다.</li>
+      </ol>
+    </div>
+  </div>
+  <p class="note">이 페이지는 코드를 화면에 보여주기만 합니다. 코드를 어디로도 전송하거나 저장하지 않습니다.</p>
+</main>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var status = document.getElementById('status');
+  var code = (params.get('code') || '').replace(/#_$/, '');
+  var error = params.get('error_description') || params.get('error');
+  // Remove the code from the address bar and history right away.
+  history.replaceState(null, '', location.pathname);
+  if (error) {
+    status.textContent = '연결이 취소되었거나 실패했습니다: ' + error.slice(0, 200);
+    status.className = 'status bad';
+    return;
+  }
+  if (!code || !/^[A-Za-z0-9_\-.]+$/.test(code)) {
+    status.textContent = '받은 인증 코드가 없습니다. Threads 연결을 처음부터 다시 시도해 주세요.';
+    status.className = 'status bad';
+    return;
+  }
+  status.textContent = 'Threads 인증 코드를 받았습니다.';
+  status.className = 'status ok';
+  var box = document.getElementById('code');
+  box.value = code + (params.get('state') ? '\nstate=' + params.get('state') : '');
+  document.getElementById('codeBox').hidden = false;
+  document.getElementById('copy').addEventListener('click', function () {
+    var btn = this;
+    var done = function () { btn.textContent = '복사됨 ✓'; };
+    if (navigator.clipboard) { navigator.clipboard.writeText(code).then(done, function () { box.select(); }); }
+    else { box.select(); document.execCommand('copy'); done(); }
+  });
+})();
+</script>
+</body>
+</html>
